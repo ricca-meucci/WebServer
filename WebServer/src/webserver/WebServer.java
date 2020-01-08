@@ -9,54 +9,27 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Date;
 import java.util.StringTokenizer;
+import javax.xml.bind.annotation.*;
 
-public class WebServer implements Runnable{ 
-	
-	static final File WEB_ROOT = new File(".");
-	static final String DEFAULT_FILE = "index.html";
-	static final String FILE_NOT_FOUND = "404.html";
-	static final String METHOD_NOT_SUPPORTED = "not_supported.html";
-	// port to listen connection
-	static final int PORT = 8080;
-	
-	// verbose mode
-	static final boolean verbose = true;
+@XmlRootElement
+public class WebServer implements Runnable{
 	
 	// Client Connection via Socket Class
 	private Socket connect;
+        private Config cfg;
 	
-	public WebServer(Socket c)
+        public WebServer()
+        {}
+        
+	public WebServer(Socket c, Config cfg)
         {
 		connect = c;
+                this.cfg = cfg;
 	}
 	
-	public static void main(String[] args) {
-		try {
-			ServerSocket serverConnect = new ServerSocket(PORT);
-			System.out.println("Server started.\nListening for connections on port : " + PORT + " ...\n");
-			
-			// we listen until user halts server execution
-			while (true) {
-				WebServer myServer = new WebServer(serverConnect.accept());
-				
-				if (verbose) {
-					System.out.println("Connecton opened. (" + new Date() + ")");
-				}
-				
-				// create dedicated thread to manage the client connection
-				Thread thread = new Thread(myServer);
-				thread.start();
-			}
-			
-		} catch (IOException e) {
-			System.err.println("Server Connection error : " + e.getMessage());
-		}
-	}
-
 	@Override
 	public void run() {
 		// we manage our particular client connection
@@ -83,12 +56,12 @@ public class WebServer implements Runnable{
 			
 			// we support only GET and HEAD methods, we check
 			if (!method.equals("GET")  &&  !method.equals("HEAD")) {
-				if (verbose) {
+				if (cfg.verbose) {
 					System.out.println("501 Not Implemented : " + method + " method.");
 				}
 				
 				// we return the not supported file to the client
-				File file = new File(WEB_ROOT, METHOD_NOT_SUPPORTED);
+				File file = new File(cfg.web_root, cfg.method_not_supported);
 				int fileLength = (int) file.length();
 				String contentMimeType = "text/html";
 				//read content to return to client
@@ -109,10 +82,10 @@ public class WebServer implements Runnable{
 			} else {
 				// GET or HEAD method
 				if (fileRequested.endsWith("/")) {
-					fileRequested += DEFAULT_FILE;
+					fileRequested += cfg.default_file;
 				}
 				
-				File file = new File(WEB_ROOT, fileRequested);
+				File file = new File(cfg.web_root, fileRequested);
 				int fileLength = (int) file.length();
 				String content = getContentType(fileRequested);
 				
@@ -132,7 +105,7 @@ public class WebServer implements Runnable{
 					dataOut.flush();
 				}
 				
-				if (verbose) {
+				if (cfg.verbose) {
 					System.out.println("File " + fileRequested + " of type " + content + " returned");
 				}
 				
@@ -157,7 +130,7 @@ public class WebServer implements Runnable{
 				System.err.println("Error closing stream : " + e.getMessage());
 			} 
 			
-			if (verbose) {
+			if (cfg.verbose) {
 				System.out.println("Connection closed.\n");
 			}
 		}
@@ -184,12 +157,16 @@ public class WebServer implements Runnable{
 	private String getContentType(String fileRequested) {
 		if (fileRequested.endsWith(".htm")  ||  fileRequested.endsWith(".html"))
 			return "text/html";
+                else if (fileRequested.endsWith(".css"))
+			return "text/css";
+                else if (fileRequested.endsWith(".js"))
+			return "application/javascript";
 		else
 			return "text/plain";
 	}
 	
 	private void fileNotFound(PrintWriter out, OutputStream dataOut, String fileRequested) throws IOException {
-		File file = new File(WEB_ROOT, FILE_NOT_FOUND);
+		File file = new File(cfg.web_root, cfg.file_not_found);
 		int fileLength = (int) file.length();
 		String content = "text/html";
 		byte[] fileData = readFileData(file, fileLength);
@@ -201,7 +178,7 @@ public class WebServer implements Runnable{
                     
                     out.println(); // blank line between headers and content, very important !
                     out.flush(); // flush character output stream buffer
-                    if (verbose)
+                    if (cfg.verbose)
                     {
 			System.out.println("File " + fileRequested + " not found, redirecting to " + fileRequested + "/");
                     }
@@ -218,7 +195,7 @@ public class WebServer implements Runnable{
                     out.flush(); // flush character output stream buffer
                     dataOut.write(fileData, 0, fileLength);
                     dataOut.flush();
-                    if (verbose)
+                    if (cfg.verbose)
                     {
 			System.out.println("File " + fileRequested + " not found");
                     }

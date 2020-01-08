@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<config>
+    <web_root>/home/informatica/seeto</web_root>
+    <default_file>index.html</default_file>
+    <file_not_found>404.html</file_not_found>
+    <method_not_supported>not_supported.html</method_not_supported>
+    <port>1234</port>
+    <verbose>true</verbose>
+</config>
