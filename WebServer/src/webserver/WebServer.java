@@ -161,6 +161,12 @@ public class WebServer implements Runnable{
 			return "text/css";
                 else if (fileRequested.endsWith(".js"))
 			return "application/javascript";
+                else if (fileRequested.endsWith(".xml"))
+			return "text/xml";
+                else if (fileRequested.endsWith(".png"))
+			return "image/png";
+                else if (fileRequested.endsWith(".jpg") || fileRequested.endsWith(".jpeg"))
+			return "image/jpeg";
 		else
 			return "text/plain";
 	}
